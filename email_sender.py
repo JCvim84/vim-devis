@@ -47,13 +47,18 @@ www.visiterilemaurice.com
     msg.attach(MIMEText(body, "plain", "utf-8"))
 
     # Pièce jointe PDF
+    pdf_filename = os.path.basename(pdf_path)
     with open(pdf_path, "rb") as f:
-        part = MIMEBase("application", "octet-stream")
+        part = MIMEBase("application", "pdf")
         part.set_payload(f.read())
 
     encoders.encode_base64(part)
-    pdf_filename = os.path.basename(pdf_path)
-    part.add_header("Content-Disposition", f"attachment; filename={pdf_filename}")
+    part.add_header(
+        "Content-Disposition",
+        "attachment",
+        filename=("utf-8", "", pdf_filename)
+    )
+    part.add_header("Content-Type", "application/pdf", name=pdf_filename)
     msg.attach(part)
 
     # Envoi

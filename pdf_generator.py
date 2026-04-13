@@ -116,12 +116,12 @@ def _draw_header(c, width, height):
     """Logo + infos société"""
     # Logo image (si disponible) sinon fallback texte
     if os.path.exists(LOGO_PATH):
-        # Dimensions : largeur 85mm, hauteur proportionnelle (600x256 → ratio 2.34)
+        # Logo aligné avec le haut des infos société (top à height - 10mm)
         logo_w = 85*mm
         logo_h = logo_w * (256 / 600)
-        c.drawImage(LOGO_PATH, 15*mm, height - 15*mm - logo_h, width=logo_w, height=logo_h, mask='auto')
+        logo_top = height - 10*mm
+        c.drawImage(LOGO_PATH, 15*mm, logo_top - logo_h, width=logo_w, height=logo_h, mask='auto')
     else:
-        # Fallback texte si pas de logo
         c.setFillColor(TEAL)
         c.rect(15*mm, height - 45*mm, 85*mm, 35*mm, fill=1, stroke=0)
         c.setFillColor(colors.white)
@@ -130,13 +130,13 @@ def _draw_header(c, width, height):
         c.setFont("Helvetica-Bold", 18)
         c.drawString(20*mm, height - 34*mm, "ILE-MAURICE")
 
-    # Infos société (droite)
+    # Infos société (droite) — alignées avec le haut du logo
     c.setFillColor(DARK_TEXT)
     c.setFont("Helvetica-Bold", 7)
-    c.drawRightString(width - 15*mm, height - 14*mm, COMPANY["name"])
+    c.drawRightString(width - 15*mm, height - 12*mm, COMPANY["name"])
     c.setFont("Helvetica", 7)
     for i, line in enumerate([COMPANY["address"], COMPANY["city"], COMPANY["phone"], COMPANY["website"], COMPANY["brn"]]):
-        c.drawRightString(width - 15*mm, height - (20 + i * 5)*mm, line)
+        c.drawRightString(width - 15*mm, height - (18 + i * 5)*mm, line)
 
     # Ligne séparatrice
     c.setStrokeColor(TEAL)
