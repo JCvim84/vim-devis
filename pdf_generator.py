@@ -109,21 +109,26 @@ def generate_pdf(client: dict, items: list, objet: str, doc_type: str = "DEVIS",
     return filepath
 
 
+LOGO_PATH = os.path.join(os.path.dirname(__file__), "logo_vim.png")
+
+
 def _draw_header(c, width, height):
     """Logo + infos société"""
-    # Bandeau teal gauche
-    c.setFillColor(TEAL)
-    c.rect(15*mm, height - 45*mm, 85*mm, 35*mm, fill=1, stroke=0)
-
-    # Texte logo
-    c.setFillColor(colors.white)
-    c.setFont("Helvetica", 20)
-    c.drawString(20*mm, height - 22*mm, "VISITER")
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(20*mm, height - 34*mm, "ILE-MAURICE")
-    # Tilde décoratif
-    c.setFont("Helvetica", 14)
-    c.drawString(64*mm, height - 22*mm, "~")
+    # Logo image (si disponible) sinon fallback texte
+    if os.path.exists(LOGO_PATH):
+        # Dimensions : largeur 85mm, hauteur proportionnelle (600x256 → ratio 2.34)
+        logo_w = 85*mm
+        logo_h = logo_w * (256 / 600)
+        c.drawImage(LOGO_PATH, 15*mm, height - 15*mm - logo_h, width=logo_w, height=logo_h, mask='auto')
+    else:
+        # Fallback texte si pas de logo
+        c.setFillColor(TEAL)
+        c.rect(15*mm, height - 45*mm, 85*mm, 35*mm, fill=1, stroke=0)
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica", 20)
+        c.drawString(20*mm, height - 22*mm, "VISITER")
+        c.setFont("Helvetica-Bold", 18)
+        c.drawString(20*mm, height - 34*mm, "ILE-MAURICE")
 
     # Infos société (droite)
     c.setFillColor(DARK_TEXT)
