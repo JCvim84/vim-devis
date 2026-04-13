@@ -165,17 +165,17 @@ with col2:
 # ── Prestations ───────────────────────────────
 st.markdown('<div class="section-header">🏝️ Prestations</div>', unsafe_allow_html=True)
 
-if "items" not in st.session_state:
-    st.session_state.items = [{"description": "", "qte": 1, "prix": 0.0}]
+if "lignes" not in st.session_state:
+    st.session_state.lignes = [{"description": "", "qte": 1, "prix": 0.0}]
 
 
 def add_item():
-    st.session_state.items.append({"description": "", "qte": 1, "prix": 0.0})
+    st.session_state.lignes.append({"description": "", "qte": 1, "prix": 0.0})
 
 
 def remove_item(idx):
-    if len(st.session_state.items) > 1:
-        st.session_state.items.pop(idx)
+    if len(st.session_state.lignes) > 1:
+        st.session_state.lignes.pop(idx)
 
 
 # Header colonnes
@@ -187,7 +187,7 @@ h4.markdown("**Total**")
 
 total_general = 0.0
 
-for idx, item in enumerate(st.session_state.items):
+for idx, item in enumerate(st.session_state.lignes):
     c1, c2, c3, c4, c5 = st.columns([5, 1.2, 2, 2, 0.6])
 
     with c1:
@@ -268,7 +268,7 @@ if generate_btn:
     if envoyer_email and not config.get("gmail_user"):
         errors.append("Configure ton email Gmail dans la barre latérale")
 
-    valid_items = [i for i in st.session_state.items if i["description"].strip() and i["prix"] > 0]
+    valid_items = [i for i in st.session_state.lignes if i["description"].strip() and i["prix"] > 0]
     if not valid_items:
         errors.append("Ajoute au moins une prestation avec description et prix")
 
