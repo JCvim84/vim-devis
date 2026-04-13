@@ -1,0 +1,6 @@
+config.json
+devis_counter.json
+devis_output/
+__pycache__/
+*.pyc
+.env
