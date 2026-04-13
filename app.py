@@ -11,6 +11,7 @@ from datetime import datetime
 from pdf_generator import generate_pdf, OUTPUT_DIR
 from email_sender import send_devis_email
 from google_drive import upload_pdf
+from ai_parser import parse_demande_client
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 IS_CLOUD = not os.path.exists(CONFIG_FILE) and hasattr(st, "secrets")
@@ -132,6 +133,37 @@ with col_title:
 st.markdown("---")
 
 # ─────────────────────────────────────────────
+# Import automatique depuis texte client (IA)
+# ─────────────────────────────────────────────
+
+with st.expander("🤖 Importer depuis un message client (WhatsApp / Email)", expanded=False):
+    texte_client = st.text_area(
+        "Colle ici le message du client",
+        placeholder="Ex: Bonjour, je souhaite réserver l'appartement O'Biches Deluxe pour 2 personnes du 15 au 22 mars 2026...",
+        height=150,
+    )
+    if st.button("✨ Analyser et remplir le formulaire", type="primary"):
+        api_key = config.get("anthropic_api_key", "") or st.secrets.get("anthropic_api_key", "") if hasattr(st, "secrets") else ""
+        if not api_key:
+            st.error("❌ Clé API Anthropic manquante dans les secrets Streamlit")
+        elif not texte_client.strip():
+            st.error("❌ Colle d'abord un message client")
+        else:
+            with st.spinner("Analyse en cours..."):
+                try:
+                    result = parse_demande_client(texte_client, api_key)
+                    st.session_state.ai_result = result
+                    st.success("✅ Formulaire pré-rempli — vérifie et complète les prix manquants")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Erreur : {e}")
+
+# Appliquer le résultat IA si disponible
+ai = st.session_state.get("ai_result", {})
+
+st.markdown("---")
+
+# ─────────────────────────────────────────────
 # Formulaire
 # ─────────────────────────────────────────────
 
@@ -141,18 +173,18 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown('<div class="section-header">👤 Informations Client</div>', unsafe_allow_html=True)
 
-    client_nom = st.text_input("Nom complet *", placeholder="RÉMI BENSABATH")
-    client_societe = st.text_input("Société (optionnel)", placeholder="HOLDING GROUPE SABA")
-    client_adresse = st.text_input("Adresse *", placeholder="7 RUE DE LA PRÉFECTURE")
-    client_ville = st.text_input("Ville & Code postal *", placeholder="06300 NICE")
-    client_email = st.text_input("Email client *", placeholder="client@email.com")
+    client_nom = st.text_input("Nom complet *", value=ai.get("client", {}).get("nom", ""), placeholder="RÉMI BENSABATH")
+    client_societe = st.text_input("Société (optionnel)", value=ai.get("client", {}).get("societe", ""), placeholder="HOLDING GROUPE SABA")
+    client_adresse = st.text_input("Adresse *", value=ai.get("client", {}).get("adresse", ""), placeholder="7 RUE DE LA PRÉFECTURE")
+    client_ville = st.text_input("Ville & Code postal *", value=ai.get("client", {}).get("ville", ""), placeholder="06300 NICE")
+    client_email = st.text_input("Email client *", value=ai.get("client", {}).get("email", ""), placeholder="client@email.com")
 
 # ── Détails devis ─────────────────────────────
 with col2:
     st.markdown('<div class="section-header">📋 Détails du Devis</div>', unsafe_allow_html=True)
 
     doc_type = st.selectbox("Type de document", ["DEVIS", "FACTURE"])
-    objet = st.text_input("Objet *", placeholder="Séjour du 21 au 28 février 2026")
+    objet = st.text_input("Objet *", value=ai.get("objet", ""), placeholder="Séjour du 21 au 28 février 2026")
 
     col_d, col_n = st.columns(2)
     with col_d:
@@ -165,8 +197,16 @@ with col2:
 # ── Prestations ───────────────────────────────
 st.markdown('<div class="section-header">🏝️ Prestations</div>', unsafe_allow_html=True)
 
+# Pré-remplir les lignes depuis l'IA si disponible
 if "lignes" not in st.session_state:
-    st.session_state.lignes = [{"description": "", "qte": 1, "prix": 0.0}]
+    ai_lignes = ai.get("lignes", [])
+    if ai_lignes:
+        st.session_state.lignes = [{"description": l.get("description", ""), "qte": l.get("qte", 1), "prix": float(l.get("prix", 0.0))} for l in ai_lignes]
+    else:
+        st.session_state.lignes = [{"description": "", "qte": 1, "prix": 0.0}]
+elif ai.get("lignes") and st.session_state.get("ai_result"):
+    st.session_state.lignes = [{"description": l.get("description", ""), "qte": l.get("qte", 1), "prix": float(l.get("prix", 0.0))} for l in ai.get("lignes", [])]
+    del st.session_state["ai_result"]
 
 
 def add_item():
